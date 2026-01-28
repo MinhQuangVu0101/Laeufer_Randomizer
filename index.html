@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Team Generator</title>
+    
+    <!-- Externe CSS-Datei einbinden -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🏐 Volleyball Team Generator</h1>
+        <p class="subtitle">Erik zeigen, dass ich Eier habe</p>
+
+        <div class="input-section">
+            <div class="position-group">
+                <h3>Außenangreifer</h3>
+                <small>Je Name eine Zeile</small>
+                <textarea id="aussen" placeholder="z.B.:
+Max Müller
+Anna Schmidt
+Tom Weber"></textarea>
+            </div>
+
+            <div class="position-group">
+                <h3>Mittelblock</h3>
+                <small>Je Name eine Zeile</small>
+                <textarea id="mitte" placeholder="z.B.:
+Lisa Meyer
+Paul Klein"></textarea>
+            </div>
+
+            <div class="position-group">
+                <h3>Zuspieler</h3>
+                <small>Je Name eine Zeile</small>
+                <textarea id="zuspieler" placeholder="z.B.:
+Sarah König
+Tim Fischer"></textarea>
+            </div>
+
+            <div class="position-group">
+                <h3>Libero</h3>
+                <small>Je Name eine Zeile</small>
+                <textarea id="libero" placeholder="z.B.:
+Julia Wagner
+Leon Bauer"></textarea>
+            </div>
+
+            <div class="position-group">
+                <h3>Diagonal</h3>
+                <small>Je Name eine Zeile</small>
+                <textarea id="diagonal" placeholder="z.B.:
+Nina Hoffmann
+Felix Schneider"></textarea>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button onclick="generateTeams()">🎲 Teams generieren</button>
+            <button class="secondary" onclick="clearAllData()">🗑️ Alle Namen löschen</button>
+        </div>
+
+        <div id="info"></div>
+
+        <div id="results" class="results">
+            <h2 style="text-align: center; margin-bottom: 20px; color: #667eea;">📋 Generierte Teams</h2>
+
+            <div class="teams-container">
+                <div class="team">
+                    <h2>Team 1</h2>
+                    <div id="team1-content"></div>
+                    <div class="player-count" id="team1-count"></div>
+                </div>
+
+                <div class="team">
+                    <h2>Team 2</h2>
+                    <div id="team2-content"></div>
+                    <div class="player-count" id="team2-count"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="saved-indicator" class="saved-indicator">
+        💾 Automatisch gespeichert!
+    </div>
+
+    <!-- Externe JavaScript-Datei einbinden -->
+    <script src="script.js"></script>
+</body>
+</html>
