@@ -13,6 +13,17 @@ function loadSavedData() {
             document.getElementById(position).value = savedData;
         }
     });
+
+    // Checkbox-Status für beide Teams laden
+    const team1NoLibero = localStorage.getItem('volleyball_team1_no_libero');
+    if (team1NoLibero === 'true') {
+        document.getElementById('team1-no-libero').checked = true;
+    }
+    
+    const team2NoLibero = localStorage.getItem('volleyball_team2_no_libero');
+    if (team2NoLibero === 'true') {
+        document.getElementById('team2-no-libero').checked = true;
+    }
 }
 
 function setupAutoSave() {
@@ -26,6 +37,17 @@ function setupAutoSave() {
             localStorage.setItem('volleyball_' + position, this.value);
             showSavedIndicator();
         });
+    });
+
+    // Checkboxen für beide Teams speichern
+    document.getElementById('team1-no-libero').addEventListener('change', function() {
+        localStorage.setItem('volleyball_team1_no_libero', this.checked);
+        showSavedIndicator();
+    });
+    
+    document.getElementById('team2-no-libero').addEventListener('change', function() {
+        localStorage.setItem('volleyball_team2_no_libero', this.checked);
+        showSavedIndicator();
     });
 }
 
@@ -46,6 +68,11 @@ function clearAllData() {
             localStorage.removeItem('volleyball_' + position);
             document.getElementById(position).value = '';
         });
+
+        localStorage.removeItem('volleyball_team1_no_libero');
+        localStorage.removeItem('volleyball_team2_no_libero');
+        document.getElementById('team1-no-libero').checked = false;
+        document.getElementById('team2-no-libero').checked = false;
 
         document.getElementById('results').classList.remove('show');
         document.getElementById('info').innerHTML = '';
@@ -122,8 +149,8 @@ function generateTeams() {
     displayInfo(info);
 
     // Teams anzeigen
-    displayTeam('team1-content', team1);
-    displayTeam('team2-content', team2);
+    displayTeam('team1-content', team1, 1);
+    displayTeam('team2-content', team2, 2);
 
     document.getElementById('team1-count').textContent = `Gesamt: ${team1Players.length} Spieler`;
     document.getElementById('team2-count').textContent = `Gesamt: ${team2Players.length} Spieler`;
@@ -215,14 +242,22 @@ function displayInfo(messages) {
     infoDiv.innerHTML = html;
 }
 
-function displayTeam(elementId, team) {
+function displayTeam(elementId, team, teamNumber) {
     const element = document.getElementById(elementId);
     let html = '';
     let hasPositions = false;
 
+    // Prüfen ob dieses Team ohne Libero spielen soll
+    const noLibero = document.getElementById(`team${teamNumber}-no-libero`).checked;
+
     const allPositions = ['Außenangreifer', 'Mittelblock', 'Zuspieler', 'Libero', 'Diagonal'];
 
     for (const position of allPositions) {
+        // Libero-Position überspringen wenn Checkbox aktiviert ist
+        if (position === 'Libero' && noLibero) {
+            continue;
+        }
+
         const players = team[position];
 
         // Nur Positionen anzeigen, die auch besetzt sind
