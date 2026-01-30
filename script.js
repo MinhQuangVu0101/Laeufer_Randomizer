@@ -140,20 +140,32 @@ function generateTeams() {
         }
     });
 
+    // Checkbox-Status für beide Teams
+    const team1NoLibero = document.getElementById('team1-no-libero').checked;
+    const team2NoLibero = document.getElementById('team2-no-libero').checked;
+
     // Positionszuweisung NUR aus Präferenzen
-    const team1 = assignPositionsFromPreferences(team1Players, playerPositions);
-    const team2 = assignPositionsFromPreferences(team2Players, playerPositions);
+    const result1 = assignPositionsFromPreferences(team1Players, playerPositions, team1NoLibero);
+    const result2 = assignPositionsFromPreferences(team2Players, playerPositions, team2NoLibero);
+    
+    const team1 = result1.team;
+    const team2 = result2.team;
+    const skippedPlayers = [...result1.skipped, ...result2.skipped];
 
     // Info-Meldungen
-    const info = generateInfo(playerPositions.size);
+    const info = generateInfo(playerPositions.size, skippedPlayers, team1, team2);
     displayInfo(info);
 
     // Teams anzeigen
     displayTeam('team1-content', team1, 1);
     displayTeam('team2-content', team2, 2);
 
-    document.getElementById('team1-count').textContent = `Gesamt: ${team1Players.length} Spieler`;
-    document.getElementById('team2-count').textContent = `Gesamt: ${team2Players.length} Spieler`;
+    // Tatsächlich zugewiesene Spieler zählen
+    const team1Count = Object.values(team1).reduce((sum, pos) => sum + pos.length, 0);
+    const team2Count = Object.values(team2).reduce((sum, pos) => sum + pos.length, 0);
+
+    document.getElementById('team1-count').textContent = `Gesamt: ${team1Count} Spieler`;
+    document.getElementById('team2-count').textContent = `Gesamt: ${team2Count} Spieler`;
 
     // Ergebnisse einblenden
     document.getElementById('results').classList.add('show');
@@ -162,7 +174,7 @@ function generateTeams() {
     document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function assignPositionsFromPreferences(players, playerPositions) {
+function assignPositionsFromPreferences(players, playerPositions, noLibero = false) {
     const team = {
         'Außenangreifer': [],
         'Mittelblock': [],
@@ -171,55 +183,109 @@ function assignPositionsFromPreferences(players, playerPositions) {
         'Diagonal': []
     };
 
-    // Spieler nach Flexibilität sortieren (erst die mit weniger Optionen)
+    // Maximale Anzahl Spieler pro Position
+    const maxPerPosition = {
+        'Außenangreifer': 2,
+        'Mittelblock': 2,
+        'Zuspieler': 1,
+        'Libero': noLibero ? 0 : 1,
+        'Diagonal': 1
+    };
+
+    // Sortiere Spieler: wenig flexible zuerst (für bessere Performance)
     const sortedPlayers = players.map(player => ({
         name: player,
         positions: playerPositions.get(player),
         flexibility: playerPositions.get(player).length
     })).sort((a, b) => a.flexibility - b.flexibility);
 
-    const assignedPlayers = new Set();
-
-    // Alle Spieler zuweisen
-    for (const player of sortedPlayers) {
-        if (assignedPlayers.has(player.name)) continue;
-
-        // Wenn nur eine Präferenz: direkt zuweisen
-        if (player.flexibility === 1) {
-            const position = player.positions[0];
-            team[position].push({
-                name: player.name,
-                preferences: player.positions
-            });
-            assignedPlayers.add(player.name);
-        } else {
-            // Bei mehreren Präferenzen: die am wenigsten besetzte wählen
-            const positionCounts = player.positions.map(pos => ({
-                position: pos,
-                count: team[pos].length
-            })).sort((a, b) => a.count - b.count);
-
-            // Zufällig eine der am wenigsten besetzten Positionen wählen
-            const minCount = positionCounts[0].count;
-            const leastOccupied = positionCounts.filter(p => p.count === minCount);
-            const chosen = leastOccupied[Math.floor(Math.random() * leastOccupied.length)];
-
-            team[chosen.position].push({
-                name: player.name,
-                preferences: player.positions
-            });
-            assignedPlayers.add(player.name);
+    // BACKTRACKING-ALGORITHMUS
+    function backtrack(playerIndex) {
+        // Basisfall: Alle Spieler wurden zugewiesen
+        if (playerIndex === sortedPlayers.length) {
+            return true; // Erfolg!
         }
+
+        const player = sortedPlayers[playerIndex];
+
+        // Probiere alle Positionen dieses Spielers aus
+        for (const position of player.positions) {
+            // Skip Libero wenn noLibero aktiviert
+            if (noLibero && position === 'Libero') continue;
+
+            // Prüfe ob Position noch Platz hat
+            if (team[position].length < maxPerPosition[position]) {
+                // Weise Position zu
+                team[position].push({
+                    name: player.name,
+                    preferences: player.positions
+                });
+
+                // Versuche rekursiv den nächsten Spieler zuzuweisen
+                if (backtrack(playerIndex + 1)) {
+                    return true; // Lösung gefunden!
+                }
+
+                // Backtrack: Entferne Zuweisung wieder und probiere nächste Position
+                team[position].pop();
+            }
+        }
+
+        // Keine gültige Zuweisung für diesen Spieler gefunden
+        return false;
     }
 
-    return team;
+    // Starte Backtracking
+    const success = backtrack(0);
+
+    if (success) {
+        return { team, skipped: [] };
+    } else {
+        // Keine Lösung möglich - gebe alle Spieler als übersprungen zurück
+        const skippedPlayers = sortedPlayers.map(p => ({
+            name: p.name,
+            preferredPositions: p.positions
+        }));
+        return { team, skipped: skippedPlayers };
+    }
 }
 
-function generateInfo(totalPlayers) {
+function generateInfo(totalPlayers, skippedPlayers = [], team1 = null, team2 = null) {
     const messages = [];
 
     if (totalPlayers % 2 !== 0) {
         messages.push(`ℹ️ ${totalPlayers} Spieler gesamt - ein Team hat einen Spieler mehr`);
+    }
+
+    if (skippedPlayers.length > 0) {
+        // Wenn ALLE Spieler übersprungen wurden, ist es ein Backtracking-Fehler
+        const team1Count = team1 ? Object.values(team1).reduce((sum, pos) => sum + pos.length, 0) : 0;
+        const team2Count = team2 ? Object.values(team2).reduce((sum, pos) => sum + pos.length, 0) : 0;
+        
+        if (team1Count === 0 || team2Count === 0) {
+            messages.push(`❌ Keine gültige Zuteilung möglich! Die Spielerkombination passt nicht zu den Positionslimits.`);
+            messages.push(`💡 Versuche: Mehr flexible Spieler hinzufügen oder weniger Spieler mit gleichen Positionen`);
+        } else {
+            messages.push(`⚠️ Folgende Spieler konnten nicht zugewiesen werden (alle gewünschten Positionen sind voll):`);
+            skippedPlayers.forEach(player => {
+                messages.push(`   • ${player.name} (kann: ${player.preferredPositions.join(', ')})`);
+            });
+        }
+        
+        // Debug-Info: Zeige Belegung der Teams
+        if (team1 && team2 && (team1Count > 0 || team2Count > 0)) {
+            messages.push(`📊 Belegung der Teams:`);
+            
+            const positions = ['Außenangreifer', 'Mittelblock', 'Zuspieler', 'Libero', 'Diagonal'];
+            const maxPos = { 'Außenangreifer': 2, 'Mittelblock': 2, 'Zuspieler': 1, 'Libero': 1, 'Diagonal': 1 };
+            
+            positions.forEach(pos => {
+                const t1Count = team1[pos].length;
+                const t2Count = team2[pos].length;
+                const max = maxPos[pos];
+                messages.push(`   • ${pos}: Team1 ${t1Count}/${max}, Team2 ${t2Count}/${max}`);
+            });
+        }
     }
 
     return messages;
@@ -247,17 +313,9 @@ function displayTeam(elementId, team, teamNumber) {
     let html = '';
     let hasPositions = false;
 
-    // Prüfen ob dieses Team ohne Libero spielen soll
-    const noLibero = document.getElementById(`team${teamNumber}-no-libero`).checked;
-
     const allPositions = ['Außenangreifer', 'Mittelblock', 'Zuspieler', 'Libero', 'Diagonal'];
 
     for (const position of allPositions) {
-        // Libero-Position überspringen wenn Checkbox aktiviert ist
-        if (position === 'Libero' && noLibero) {
-            continue;
-        }
-
         const players = team[position];
 
         // Nur Positionen anzeigen, die auch besetzt sind
