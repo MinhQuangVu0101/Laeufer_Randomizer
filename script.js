@@ -125,32 +125,226 @@ function generateTeams() {
         return;
     }
 
-    // Alle Spieler zufällig mischen und 50/50 aufteilen
+    // Alle Spieler zufällig mischen
     const allPlayers = Array.from(playerPositions.keys());
     const shuffledPlayers = shuffleArray(allPlayers);
-
-    const team1Players = [];
-    const team2Players = [];
-
-    shuffledPlayers.forEach((player, index) => {
-        if (index % 2 === 0) {
-            team1Players.push(player);
-        } else {
-            team2Players.push(player);
-        }
-    });
 
     // Checkbox-Status für beide Teams
     const team1NoLibero = document.getElementById('team1-no-libero').checked;
     const team2NoLibero = document.getElementById('team2-no-libero').checked;
-
-    // Positionszuweisung NUR aus Präferenzen
-    const result1 = assignPositionsFromPreferences(team1Players, playerPositions, team1NoLibero);
-    const result2 = assignPositionsFromPreferences(team2Players, playerPositions, team2NoLibero);
     
-    const team1 = result1.team;
-    const team2 = result2.team;
-    const skippedPlayers = [...result1.skipped, ...result2.skipped];
+    // Debug-Log zurücksetzen
+    debugLog = '';
+    console.log('🎯 CHECKBOX STATUS:');
+    console.log(`   Team 1 ohne Libero: ${team1NoLibero}`);
+    console.log(`   Team 2 ohne Libero: ${team2NoLibero}`);
+
+    // Prüfe ob überhaupt lösbar: Gibt es pure Liberos wenn beide Teams ohne Libero?
+    const pureLiberos = shuffledPlayers.filter(player => {
+        const positions = playerPositions.get(player);
+        return positions.length === 1 && positions[0] === 'Libero';
+    });
+    
+    if (pureLiberos.length > 0 && team1NoLibero && team2NoLibero) {
+        alert('❌ Es gibt Spieler die nur Libero können, aber beide Teams haben "ohne Libero" aktiviert!\n\n' +
+              'Betroffene Spieler: ' + pureLiberos.join(', ') + '\n\n' +
+              '💡 Lösung: Mindestens ein Team muss Libero erlauben, oder gib diesen Spielern weitere Positionen.');
+        return;
+    }
+
+    // RETRY-MECHANISMUS: Probiere mehrere Aufteilungen
+    let team1 = null;
+    let team2 = null;
+    let team1Players = [];
+    let team2Players = [];
+    let skippedPlayers = [];
+    let attempts = 0;
+    const maxAttempts = 10; // Probiere max 10 verschiedene Aufteilungen
+
+    while (attempts < maxAttempts) {
+        attempts++;
+        
+        // INTELLIGENTE AUFTEILUNG: Separiere pure Liberos von anderen
+        const pureLiberoPlayers = [];
+        const otherPlayers = [];
+        
+        for (const player of allPlayers) {
+            const positions = playerPositions.get(player);
+            if (positions.length === 1 && positions[0] === 'Libero') {
+                pureLiberoPlayers.push(player);
+            } else {
+                otherPlayers.push(player);
+            }
+        }
+        
+        console.log(`🔄 Versuch ${attempts}:`);
+        console.log(`   Pure Liberos: ${pureLiberoPlayers.length} ${pureLiberoPlayers.join(', ')}`);
+        console.log(`   Andere Spieler: ${otherPlayers.length}`);
+        
+        // Mische beide Gruppen separat
+        const shuffledLiberos = shuffleArray([...pureLiberoPlayers]);
+        const shuffledOthers = shuffleArray([...otherPlayers]);
+        
+        team1Players = [];
+        team2Players = [];
+        
+        // KRITISCH: Bei ungerader Spielerzahl muss Team OHNE Libero das KLEINERE Team sein!
+        const totalPlayers = allPlayers.length;
+        const isOdd = totalPlayers % 2 !== 0;
+        
+        // Berechne ideale Teamgrößen
+        let team1Size = Math.floor(totalPlayers / 2);
+        let team2Size = Math.floor(totalPlayers / 2);
+        
+        // SPEZIALFALL: Beide ohne Libero → Maximal 6 Spieler pro Team!
+        if (team1NoLibero && team2NoLibero) {
+            // Beide Teams spielen ohne Libero = nur 6 Positionen pro Team
+            team1Size = Math.min(team1Size, 6);
+            team2Size = Math.min(team2Size, 6);
+            console.log(`   ⚠️ Beide ohne Libero: Maximal 6 Spieler pro Team → Team 1=${team1Size}, Team 2=${team2Size}`);
+        } else if (isOdd) {
+            // Bei ungerader Zahl: Ein Team bekommt +1 Spieler
+            if (team1NoLibero && !team2NoLibero) {
+                // Team 1 ohne Libero → Team 1 kleiner, Team 2 größer
+                team2Size++;
+                console.log(`   ⚠️ Ungerade Spielerzahl: Team 1 ohne Libero → Team 1=${team1Size}, Team 2=${team2Size}`);
+            } else if (!team1NoLibero && team2NoLibero) {
+                // Team 2 ohne Libero → Team 2 kleiner, Team 1 größer
+                team1Size++;
+                console.log(`   ⚠️ Ungerade Spielerzahl: Team 2 ohne Libero → Team 1=${team1Size}, Team 2=${team2Size}`);
+            } else {
+                // Beide mit Libero: Egal welches Team größer ist
+                team1Size++;
+                console.log(`   ℹ️ Ungerade Spielerzahl: Team 1=${team1Size}, Team 2=${team2Size}`);
+            }
+        }
+        
+        // Verteile pure Liberos basierend auf Haken
+        if (team1NoLibero && !team2NoLibero) {
+            // Alle Liberos zu Team 2
+            team2Players.push(...shuffledLiberos);
+            console.log(`   → ${shuffledLiberos.length} Liberos zu Team 2 (Team 1 ohne Libero)`);
+            
+            // AUSGLEICH: Verschiebe gleich viele andere Spieler von Team 2 zu Team 1
+            const toBalance = Math.min(shuffledLiberos.length, shuffledOthers.length);
+            for (let i = 0; i < toBalance && shuffledOthers.length > 0; i++) {
+                const balancePlayer = shuffledOthers.pop();
+                team1Players.push(balancePlayer);
+                console.log(`      Ausgleich: ${balancePlayer} zu Team 1`);
+            }
+        } else if (!team1NoLibero && team2NoLibero) {
+            // Alle Liberos zu Team 1
+            team1Players.push(...shuffledLiberos);
+            console.log(`   → ${shuffledLiberos.length} Liberos zu Team 1 (Team 2 ohne Libero)`);
+            
+            // AUSGLEICH: Verschiebe gleich viele andere Spieler von Team 1 zu Team 2  
+            const toBalance = Math.min(shuffledLiberos.length, shuffledOthers.length);
+            for (let i = 0; i < toBalance && shuffledOthers.length > 0; i++) {
+                const balancePlayer = shuffledOthers.pop();
+                team2Players.push(balancePlayer);
+                console.log(`      Ausgleich: ${balancePlayer} zu Team 2`);
+            }
+        } else if (!team1NoLibero && !team2NoLibero) {
+            // Beide erlauben Libero: 50/50
+            shuffledLiberos.forEach((player, index) => {
+                if (index % 2 === 0) {
+                    team1Players.push(player);
+                } else {
+                    team2Players.push(player);
+                }
+            });
+            console.log(`   → Liberos 50/50 verteilt`);
+        }
+        // Wenn beide noLibero: wird oben schon abgefangen
+        
+        // Verteile RESTLICHE andere Spieler gemäß team1Size und team2Size
+        while (shuffledOthers.length > 0) {
+            let added = false;
+            
+            if (team1Players.length < team1Size && shuffledOthers.length > 0) {
+                team1Players.push(shuffledOthers.shift());
+                added = true;
+            }
+            if (team2Players.length < team2Size && shuffledOthers.length > 0) {
+                team2Players.push(shuffledOthers.shift());
+                added = true;
+            }
+            
+            // Wenn beide Teams voll sind, Rest bleibt übrig (für die Bank)
+            if (!added) {
+                console.log(`   ⚠️ Beide Teams voll! ${shuffledOthers.length} Spieler übrig für die Bank`);
+                break;
+            }
+        }
+
+        console.log(`   Team 1: ${team1Players.length} Spieler`, team1Players);
+        console.log(`   Team 2: ${team2Players.length} Spieler`, team2Players);
+        
+        // Sammle überzählige Spieler für die Bank
+        const benchPlayers = [];
+        while (shuffledOthers.length > 0) {
+            const player = shuffledOthers.shift();
+            benchPlayers.push({
+                name: player,
+                preferredPositions: playerPositions.get(player)
+            });
+        }
+        if (benchPlayers.length > 0) {
+            console.log(`   🪑 ${benchPlayers.length} Spieler für die Bank:`, benchPlayers.map(p => p.name));
+        }
+        
+        // Debug: Zeige welche Spieler welche Positionen haben
+        console.log(`   Team 1 Details:`);
+        team1Players.forEach(p => {
+            const positions = playerPositions.get(p);
+            const availablePos = positions.filter(pos => !(team1NoLibero && pos === 'Libero'));
+            console.log(`      ${p}: ${positions.join(', ')} → verfügbar: ${availablePos.join(', ')}`);
+        });
+        console.log(`   Team 2 Details:`);
+        team2Players.forEach(p => {
+            const positions = playerPositions.get(p);
+            const availablePos = positions.filter(pos => !(team2NoLibero && pos === 'Libero'));
+            console.log(`      ${p}: ${positions.join(', ')} → verfügbar: ${availablePos.join(', ')}`);
+        });
+
+        // Versuche Positionen zuzuweisen mit Backtracking
+        console.log(`🎲 Starte Backtracking für beide Teams...`);
+        
+        const result1 = assignPositionsFromPreferences(team1Players, playerPositions, team1NoLibero);
+        const result2 = assignPositionsFromPreferences(team2Players, playerPositions, team2NoLibero);
+        
+        console.log(`   Team1 Result: ${result1.skipped.length} übersprungen`);
+        console.log(`   Team2 Result: ${result2.skipped.length} übersprungen`);
+        
+        team1 = result1.team;
+        team2 = result2.team;
+        // Kombiniere: Backtracking-Skips + Bench-Spieler
+        skippedPlayers = [...result1.skipped, ...result2.skipped, ...benchPlayers];
+
+        // Erfolg wenn beide Teams komplett zugewiesen wurden
+        // (Bench-Spieler sind OK und kein Grund zum Retry)
+        if (result1.skipped.length === 0 && result2.skipped.length === 0) {
+            if (benchPlayers.length > 0) {
+                console.log(`✓ Lösung gefunden nach ${attempts} Versuch(en) - ${benchPlayers.length} Spieler auf der Bank`);
+            } else {
+                console.log(`✓ Lösung gefunden nach ${attempts} Versuch(en)`);
+            }
+            break;
+        }
+        
+        // Bei letztem Versuch: Zeige Fehler
+        if (attempts === maxAttempts) {
+            alert(`❌ Keine gültige Teamaufteilung gefunden nach ${maxAttempts} Versuchen!\n\n` +
+                  `Das kann passieren wenn:\n` +
+                  `• Zu viele Spieler die gleichen Positionen wollen\n` +
+                  `• Die Libero-Einstellungen die Aufteilung unmöglich machen\n\n` +
+                  `💡 Versuche:\n` +
+                  `• Noch einmal "Teams generieren" klicken\n` +
+                  `• Spielern mehr Positions-Optionen geben\n` +
+                  `• Libero-Haken anpassen`);
+            return;
+        }
+    }
 
     // Info-Meldungen
     const info = generateInfo(playerPositions.size, skippedPlayers, team1, team2);
@@ -167,6 +361,9 @@ function generateTeams() {
     document.getElementById('team1-count').textContent = `Gesamt: ${team1Count} Spieler`;
     document.getElementById('team2-count').textContent = `Gesamt: ${team2Count} Spieler`;
 
+    // Auswechselbank anzeigen wenn Spieler übrig sind
+    displayBench(skippedPlayers);
+
     // Ergebnisse einblenden
     document.getElementById('results').classList.add('show');
 
@@ -175,6 +372,8 @@ function generateTeams() {
 }
 
 function assignPositionsFromPreferences(players, playerPositions, noLibero = false) {
+    console.log(`📋 assignPositionsFromPreferences aufgerufen: ${players.length} Spieler, noLibero=${noLibero}`);
+    
     const team = {
         'Außenangreifer': [],
         'Mittelblock': [],
@@ -191,6 +390,8 @@ function assignPositionsFromPreferences(players, playerPositions, noLibero = fal
         'Libero': noLibero ? 0 : 1,
         'Diagonal': 1
     };
+    
+    console.log(`   Libero Limit: ${maxPerPosition['Libero']}`);
 
     // Sortiere Spieler: wenig flexible zuerst (für bessere Performance)
     const sortedPlayers = players.map(player => ({
@@ -198,6 +399,8 @@ function assignPositionsFromPreferences(players, playerPositions, noLibero = fal
         positions: playerPositions.get(player),
         flexibility: playerPositions.get(player).length
     })).sort((a, b) => a.flexibility - b.flexibility);
+    
+    console.log(`   Spieler sortiert:`, sortedPlayers.map(p => `${p.name}(${p.positions.join(',')})`));
 
     // BACKTRACKING-ALGORITHMUS
     function backtrack(playerIndex) {
@@ -237,6 +440,11 @@ function assignPositionsFromPreferences(players, playerPositions, noLibero = fal
 
     // Starte Backtracking
     const success = backtrack(0);
+    
+    console.log(`   Backtracking Ergebnis: ${success ? '✅ ERFOLG' : '❌ FEHLGESCHLAGEN'}`);
+    if (success) {
+        console.log(`   Zuweisungen:`, Object.entries(team).map(([pos, players]) => `${pos}: ${players.length}`));
+    }
 
     if (success) {
         return { team, skipped: [] };
@@ -246,6 +454,7 @@ function assignPositionsFromPreferences(players, playerPositions, noLibero = fal
             name: p.name,
             preferredPositions: p.positions
         }));
+        console.log(`   ⚠️ Alle Spieler übersprungen`);
         return { team, skipped: skippedPlayers };
     }
 }
@@ -345,4 +554,29 @@ function displayTeam(elementId, team, teamNumber) {
     }
 
     element.innerHTML = html;
+}
+
+function displayBench(skippedPlayers) {
+    const benchSection = document.getElementById('bench-section');
+    const benchContent = document.getElementById('bench-content');
+    
+    if (skippedPlayers.length === 0) {
+        benchSection.style.display = 'none';
+        return;
+    }
+    
+    // Zeige Auswechselbank
+    benchSection.style.display = 'block';
+    
+    let html = '';
+    skippedPlayers.forEach(player => {
+        html += `
+            <div style="background: #f8f8f8; padding: 15px 20px; border-radius: 8px; border-left: 4px solid #ff9800;">
+                <div style="font-weight: bold; margin-bottom: 5px;">👤 ${player.name}</div>
+                <div style="font-size: 12px; color: #666;">Kann: ${player.preferredPositions.join(', ')}</div>
+            </div>
+        `;
+    });
+    
+    benchContent.innerHTML = html;
 }
