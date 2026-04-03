@@ -112,6 +112,67 @@ body {
   font-size: 0.78rem;
 }
 
+/* ── Player Pool ──────────────────────────────── */
+.player-pool {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.pool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.pool-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 36px;
+}
+.pool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: grab;
+  user-select: none;
+  transition: all 100ms ease;
+}
+.pool-chip:active { cursor: grabbing; opacity: 0.7; }
+.pool-chip:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface-2)); }
+.pool-chip.is-assigned {
+  opacity: 0.35;
+  text-decoration: line-through;
+  pointer-events: none;
+}
+.pool-chip-remove {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+.pool-chip-remove:hover { color: var(--error); }
+
+/* Drop target highlight */
+.position-card.drag-over {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+textarea.drag-over {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
+}
+
 /* ── Input Grid ───────────────────────────────── */
 .input-grid {
   display: grid;

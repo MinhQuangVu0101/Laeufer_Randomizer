@@ -11,12 +11,21 @@ const LABEL_MAP = {
 const MAX_PER_POS = { 'Aussenangreifer': 2, 'Mittelblock': 2, 'Zuspieler': 1, 'Libero': 1, 'Diagonal': 1 };
 const MAX_HISTORY = 3;
 
+// ── Preset Players ─────────────────────────────
+const PRESET_PLAYERS = [
+  'Quang', 'Anh', 'Erik', 'Tom', 'Ben', 'Claudio', 'David', 'Elena',
+  'Ermin', 'Georg', 'Heiko', 'Janika', 'Jonas', 'Jun-Min', 'Karim',
+  'Lara', 'Laura', 'Lisa', 'Omid', 'Pablo', 'PauTom', 'Justus', 'Tim'
+];
+
 // ── Init ───────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadSavedData();
   setupAutoSave();
   refreshRosterDropdown();
   renderHistory();
+  initPlayerPool();
+  setupDragDrop();
 });
 
 // ── Toast ──────────────────────────────────────
@@ -384,4 +393,121 @@ function renderHistory() {
       <strong>T2:</strong> ${e.team2.join(', ')}
     </div>`
   ).join('');
+}
+
+// ── Player Pool ────────────────────────────────
+function getPoolPlayers() {
+  try { return JSON.parse(localStorage.getItem('vb_pool') || 'null') || [...PRESET_PLAYERS]; }
+  catch { return [...PRESET_PLAYERS]; }
+}
+
+function savePoolPlayers(players) {
+  localStorage.setItem('vb_pool', JSON.stringify(players));
+}
+
+function initPlayerPool() {
+  renderPool();
+}
+
+function renderPool() {
+  const container = document.getElementById('player-pool-chips');
+  const players = getPoolPlayers();
+
+  // Collect all names currently in textareas
+  const assigned = new Set();
+  POSITIONS.forEach(pos => {
+    getNames(pos).forEach(n => assigned.add(n));
+  });
+
+  container.innerHTML = '';
+  players.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'pool-chip' + (assigned.has(name) ? ' is-assigned' : '');
+    chip.draggable = true;
+    chip.dataset.player = name;
+    chip.innerHTML = `${name} <span class="pool-chip-remove" onclick="removePoolPlayer(event, '${name}')">&times;</span>`;
+
+    chip.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', name);
+      e.dataTransfer.effectAllowed = 'copy';
+      chip.style.opacity = '0.5';
+    });
+    chip.addEventListener('dragend', () => {
+      chip.style.opacity = '';
+    });
+
+    container.appendChild(chip);
+  });
+}
+
+function addCustomPlayer() {
+  const name = prompt('Spieler-Name:');
+  if (!name || !name.trim()) return;
+  const players = getPoolPlayers();
+  if (!players.includes(name.trim())) {
+    players.push(name.trim());
+    savePoolPlayers(players);
+  }
+  renderPool();
+}
+
+function removePoolPlayer(e, name) {
+  e.stopPropagation();
+  const players = getPoolPlayers().filter(p => p !== name);
+  savePoolPlayers(players);
+  renderPool();
+}
+
+// ── Drag & Drop ────────────────────────────────
+function setupDragDrop() {
+  // Make textareas accept drops
+  POSITIONS.forEach(pos => {
+    const textarea = document.getElementById(pos);
+    const card = textarea.closest('.position-card');
+
+    textarea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      textarea.classList.add('drag-over');
+    });
+    textarea.addEventListener('dragleave', () => {
+      textarea.classList.remove('drag-over');
+    });
+    textarea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      textarea.classList.remove('drag-over');
+      const name = e.dataTransfer.getData('text/plain');
+      if (!name) return;
+
+      // Add name to textarea if not already there
+      const current = textarea.value.split('\n').map(n => n.trim()).filter(n => n);
+      if (!current.includes(name)) {
+        current.push(name);
+        textarea.value = current.join('\n');
+        localStorage.setItem('vb_' + pos, textarea.value);
+        renderPool(); // Update assigned state
+        showToast(name + ' → ' + (LABEL_MAP[pos] || pos));
+      }
+    });
+
+    // Also handle dragover on the card itself
+    card.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      card.classList.add('drag-over');
+    });
+    card.addEventListener('dragleave', () => {
+      card.classList.remove('drag-over');
+    });
+    card.addEventListener('drop', (e) => {
+      // Delegate to textarea handler if not already handled
+      card.classList.remove('drag-over');
+    });
+  });
+
+  // Update pool when textareas change
+  POSITIONS.forEach(pos => {
+    document.getElementById(pos).addEventListener('input', () => {
+      renderPool();
+    });
+  });
 }
