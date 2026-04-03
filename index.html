@@ -4,105 +4,115 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volleyball Team Generator</title>
-    
-    <!-- Externe CSS-Datei einbinden -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>🏐 Volleyball Team Generator</h1>
-        <p class="subtitle">Erik zeigen, dass ich Eier habe</p>
+        <header class="header">
+            <h1>Volleyball Team Generator</h1>
+            <p class="subtitle">Faire Teams per Knopfdruck</p>
+        </header>
 
-        <div class="input-section">
-            <div class="position-group">
-                <h3>Außenangreifer</h3>
-                <small>Je Name eine Zeile</small>
-                <textarea id="aussen" placeholder="z.B.:
-Max Müller
-Anna Schmidt
-Tom Weber"></textarea>
+        <!-- Roster Management -->
+        <div class="roster-bar">
+            <select id="roster-select">
+                <option value="">-- Kader laden --</option>
+            </select>
+            <button class="btn btn-sm" onclick="saveRoster()">Speichern</button>
+            <button class="btn btn-sm btn-muted" onclick="deleteRoster()">Entfernen</button>
+        </div>
+
+        <!-- Position Inputs -->
+        <div class="input-grid">
+            <div class="position-card">
+                <div class="position-header">
+                    <span class="position-badge">AA</span>
+                    <span>Aussenangreifer</span>
+                </div>
+                <textarea id="aussen" placeholder="Ein Name pro Zeile"></textarea>
             </div>
 
-            <div class="position-group">
-                <h3>Mittelblock</h3>
-                <small>Je Name eine Zeile</small>
-                <textarea id="mitte" placeholder="z.B.:
-Lisa Meyer
-Paul Klein"></textarea>
+            <div class="position-card">
+                <div class="position-header">
+                    <span class="position-badge">MB</span>
+                    <span>Mittelblock</span>
+                </div>
+                <textarea id="mitte" placeholder="Ein Name pro Zeile"></textarea>
             </div>
 
-            <div class="position-group">
-                <h3>Zuspieler</h3>
-                <small>Je Name eine Zeile</small>
-                <textarea id="zuspieler" placeholder="z.B.:
-Sarah König
-Tim Fischer"></textarea>
+            <div class="position-card">
+                <div class="position-header">
+                    <span class="position-badge">ZS</span>
+                    <span>Zuspieler</span>
+                </div>
+                <textarea id="zuspieler" placeholder="Ein Name pro Zeile"></textarea>
             </div>
 
-            <div class="position-group">
-                <h3>Libero</h3>
-                <small>Je Name eine Zeile</small>
-                <textarea id="libero" placeholder="z.B.:
-Julia Wagner
-Leon Bauer"></textarea>
-                <div style="margin-top: 10px;">
-                    <label style="display: block; margin-bottom: 5px; color: #666;">
-                        <input type="checkbox" id="team1-no-libero" style="margin-right: 5px;">
-                        Team 1 ohne Libero
-                    </label>
-                    <label style="display: block; color: #666;">
-                        <input type="checkbox" id="team2-no-libero" style="margin-right: 5px;">
-                        Team 2 ohne Libero
-                    </label>
+            <div class="position-card">
+                <div class="position-header">
+                    <span class="position-badge">LI</span>
+                    <span>Libero</span>
+                </div>
+                <textarea id="libero" placeholder="Ein Name pro Zeile"></textarea>
+                <div class="libero-options">
+                    <label><input type="checkbox" id="team1-no-libero"> Team 1 ohne Libero</label>
+                    <label><input type="checkbox" id="team2-no-libero"> Team 2 ohne Libero</label>
                 </div>
             </div>
 
-            <div class="position-group">
-                <h3>Diagonal</h3>
-                <small>Je Name eine Zeile</small>
-                <textarea id="diagonal" placeholder="z.B.:
-Nina Hoffmann
-Felix Schneider"></textarea>
+            <div class="position-card">
+                <div class="position-header">
+                    <span class="position-badge">DI</span>
+                    <span>Diagonal</span>
+                </div>
+                <textarea id="diagonal" placeholder="Ein Name pro Zeile"></textarea>
             </div>
         </div>
 
-        <div class="button-container">
-            <button onclick="generateTeams()">🎲 Teams generieren</button>
-            <button class="secondary" onclick="clearAllData()">🗑️ Alle Namen löschen</button>
+        <!-- Actions -->
+        <div class="actions">
+            <button class="btn btn-primary" onclick="generateTeams()">Teams generieren</button>
+            <button class="btn btn-muted" onclick="clearAllData()">Alles loeschen</button>
         </div>
 
-        <div id="info"></div>
+        <!-- Error/Info Messages -->
+        <div id="info" class="info-box" style="display:none;"></div>
 
-        <div id="results" class="results">
-            <h2 style="text-align: center; margin-bottom: 20px; color: #667eea;">📋 Generierte Teams</h2>
+        <!-- Results -->
+        <div id="results" class="results" style="display:none;">
+            <div class="results-header">
+                <h2>Generierte Teams</h2>
+                <button class="btn btn-sm" onclick="copyTeams()">Kopieren</button>
+            </div>
 
-            <div class="teams-container">
-                <div class="team">
-                    <h2>Team 1</h2>
+            <div class="teams-grid">
+                <div class="team-card">
+                    <div class="team-title">Team 1</div>
                     <div id="team1-content"></div>
-                    <div class="player-count" id="team1-count"></div>
+                    <div class="team-count" id="team1-count"></div>
                 </div>
-
-                <div class="team">
-                    <h2>Team 2</h2>
+                <div class="team-card">
+                    <div class="team-title">Team 2</div>
                     <div id="team2-content"></div>
-                    <div class="player-count" id="team2-count"></div>
+                    <div class="team-count" id="team2-count"></div>
                 </div>
             </div>
-            
-            <!-- AUSWECHSELBANK -->
-            <div id="bench-section" style="display: none; margin-top: 30px;">
-                <h2 style="text-align: center; color: #666;">🪑 Auswechselbank</h2>
-                <div id="bench-content" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;"></div>
+
+            <div id="bench-section" class="bench" style="display:none;">
+                <h3>Auswechselbank</h3>
+                <div id="bench-content"></div>
             </div>
+        </div>
+
+        <!-- History -->
+        <div id="history-section" class="history" style="display:none;">
+            <h3>Letzte Generierungen</h3>
+            <div id="history-content"></div>
         </div>
     </div>
 
-    <div id="saved-indicator" class="saved-indicator">
-        💾 Automatisch gespeichert!
-    </div>
+    <div id="toast" class="toast"></div>
 
-    <!-- Externe JavaScript-Datei einbinden -->
     <script src="script.js"></script>
 </body>
 </html>
