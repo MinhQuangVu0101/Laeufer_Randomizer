@@ -1,0 +1,25 @@
+{
+  "name": "Laeufer Randomizer",
+  "short_name": "Laeufer",
+  "description": "Volleyball Team Generator",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#1e1e2e",
+  "theme_color": "#1e1e2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect width=%22192%22 height=%22192%22 rx=%2432%22 fill=%22%231e1e2e%22/><text x=%2296%22 y=%22122%22 font-family=%22system-ui%22 font-weight=%22700%22 font-size=%2290%22 text-anchor=%22middle%22 fill=%22%238fae8b%22>VB</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22><rect width=%22512%22 height=%22512%22 rx=%2296%22 fill=%22%231e1e2e%22/><text x=%22256%22 y=%22330%22 font-family=%22system-ui%22 font-weight=%22700%22 font-size=%22240%22 text-anchor=%22middle%22 fill=%22%238fae8b%22>VB</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

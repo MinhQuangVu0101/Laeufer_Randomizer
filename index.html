@@ -3,30 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e1e2e">
     <title>Volleyball Team Generator</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>Volleyball Team Generator</h1>
-            <p class="subtitle">Faire Teams per Knopfdruck</p>
+            <div class="header-top">
+                <h1 data-i18n="appTitle">Volleyball Team Generator</h1>
+                <button id="lang-toggle" class="btn btn-sm btn-muted" onclick="toggleLanguage()" title="Language">DE</button>
+            </div>
+            <p class="subtitle" data-i18n="subtitle">Faire Teams per Knopfdruck</p>
         </header>
 
         <!-- Roster Management -->
         <div class="roster-bar">
             <select id="roster-select">
-                <option value="">-- Kader laden --</option>
+                <option value="" data-i18n="loadRoster">-- Kader laden --</option>
             </select>
-            <button class="btn btn-sm" onclick="saveRoster()">Speichern</button>
-            <button class="btn btn-sm btn-muted" onclick="deleteRoster()">Entfernen</button>
+            <button class="btn btn-sm" onclick="saveRoster()" data-i18n="save">Speichern</button>
+            <button class="btn btn-sm btn-muted" onclick="deleteRoster()" data-i18n="remove">Entfernen</button>
         </div>
 
         <!-- Player Pool -->
         <div class="player-pool">
             <div class="pool-header">
-                <span>Spieler-Pool</span>
-                <button class="btn btn-sm btn-muted" onclick="addCustomPlayer()">+ Name</button>
+                <span data-i18n="playerPool">Spieler-Pool</span>
+                <button class="btn btn-sm btn-muted" onclick="addCustomPlayer()" data-i18n="addName">+ Name</button>
             </div>
             <div id="player-pool-chips" class="pool-chips"></div>
         </div>
@@ -36,52 +41,64 @@
             <div class="position-card">
                 <div class="position-header">
                     <span class="position-badge">AA</span>
-                    <span>Aussenangreifer</span>
+                    <span data-i18n="posAussen">Aussenangreifer</span>
                 </div>
-                <textarea id="aussen" placeholder="Ein Name pro Zeile"></textarea>
+                <div class="assigned-chips" id="aussen-chips" data-pos="aussen"></div>
+                <textarea id="aussen" placeholder="Ein Name pro Zeile" data-i18n-placeholder="placeholderName"></textarea>
             </div>
 
             <div class="position-card">
                 <div class="position-header">
                     <span class="position-badge">MB</span>
-                    <span>Mittelblock</span>
+                    <span data-i18n="posMitte">Mittelblock</span>
                 </div>
-                <textarea id="mitte" placeholder="Ein Name pro Zeile"></textarea>
+                <div class="assigned-chips" id="mitte-chips" data-pos="mitte"></div>
+                <textarea id="mitte" placeholder="Ein Name pro Zeile" data-i18n-placeholder="placeholderName"></textarea>
             </div>
 
             <div class="position-card">
                 <div class="position-header">
                     <span class="position-badge">ZS</span>
-                    <span>Zuspieler</span>
+                    <span data-i18n="posZuspieler">Zuspieler</span>
                 </div>
-                <textarea id="zuspieler" placeholder="Ein Name pro Zeile"></textarea>
+                <div class="assigned-chips" id="zuspieler-chips" data-pos="zuspieler"></div>
+                <textarea id="zuspieler" placeholder="Ein Name pro Zeile" data-i18n-placeholder="placeholderName"></textarea>
             </div>
 
             <div class="position-card">
                 <div class="position-header">
                     <span class="position-badge">LI</span>
-                    <span>Libero</span>
+                    <span data-i18n="posLibero">Libero</span>
                 </div>
-                <textarea id="libero" placeholder="Ein Name pro Zeile"></textarea>
+                <div class="assigned-chips" id="libero-chips" data-pos="libero"></div>
+                <textarea id="libero" placeholder="Ein Name pro Zeile" data-i18n-placeholder="placeholderName"></textarea>
                 <div class="libero-options">
-                    <label><input type="checkbox" id="team1-no-libero"> Team 1 ohne Libero</label>
-                    <label><input type="checkbox" id="team2-no-libero"> Team 2 ohne Libero</label>
+                    <label><input type="checkbox" id="team1-no-libero"> <span data-i18n="team1NoLibero">Team 1 ohne Libero</span></label>
+                    <label><input type="checkbox" id="team2-no-libero"> <span data-i18n="team2NoLibero">Team 2 ohne Libero</span></label>
                 </div>
             </div>
 
             <div class="position-card">
                 <div class="position-header">
                     <span class="position-badge">DI</span>
-                    <span>Diagonal</span>
+                    <span data-i18n="posDiagonal">Diagonal</span>
                 </div>
-                <textarea id="diagonal" placeholder="Ein Name pro Zeile"></textarea>
+                <div class="assigned-chips" id="diagonal-chips" data-pos="diagonal"></div>
+                <textarea id="diagonal" placeholder="Ein Name pro Zeile" data-i18n-placeholder="placeholderName"></textarea>
             </div>
+        </div>
+
+        <!-- Team Size Config -->
+        <div class="config-bar">
+            <label for="team-size" data-i18n="playersPerTeam">Spieler pro Team:</label>
+            <input type="number" id="team-size" min="1" max="12" value="6">
+            <span class="config-hint" data-i18n="teamSizeHint">(Max. pro Team — Rest auf Bank)</span>
         </div>
 
         <!-- Actions -->
         <div class="actions">
-            <button class="btn btn-primary" onclick="generateTeams()">Teams generieren</button>
-            <button class="btn btn-muted" onclick="clearAllData()">Alles loeschen</button>
+            <button class="btn btn-primary" onclick="generateTeams()" data-i18n="generateTeams">Teams generieren</button>
+            <button class="btn btn-muted" onclick="clearAllData()" data-i18n="clearAll">Alles loeschen</button>
         </div>
 
         <!-- Error/Info Messages -->
@@ -90,38 +107,52 @@
         <!-- Results -->
         <div id="results" class="results" style="display:none;">
             <div class="results-header">
-                <h2>Generierte Teams</h2>
-                <button class="btn btn-sm" onclick="copyTeams()">Kopieren</button>
-            </div>
-
-            <div class="teams-grid">
-                <div class="team-card">
-                    <div class="team-title">Team 1</div>
-                    <div id="team1-content"></div>
-                    <div class="team-count" id="team1-count"></div>
-                </div>
-                <div class="team-card">
-                    <div class="team-title">Team 2</div>
-                    <div id="team2-content"></div>
-                    <div class="team-count" id="team2-count"></div>
+                <h2 data-i18n="generatedTeams">Generierte Teams</h2>
+                <div class="results-actions">
+                    <button class="btn btn-sm" onclick="copyTeams()" data-i18n="copy">Kopieren</button>
+                    <button class="btn btn-sm" onclick="exportImage()" data-i18n="exportImage">Bild</button>
+                    <button class="btn btn-sm" onclick="exportPDF()" data-i18n="exportPDF">PDF</button>
                 </div>
             </div>
 
-            <div id="bench-section" class="bench" style="display:none;">
-                <h3>Auswechselbank</h3>
-                <div id="bench-content"></div>
+            <div id="results-capture">
+                <div class="teams-grid">
+                    <div class="team-card">
+                        <div class="team-title" data-i18n="team1">Team 1</div>
+                        <div id="team1-content"></div>
+                        <div class="team-count" id="team1-count"></div>
+                    </div>
+                    <div class="team-card">
+                        <div class="team-title" data-i18n="team2">Team 2</div>
+                        <div id="team2-content"></div>
+                        <div class="team-count" id="team2-count"></div>
+                    </div>
+                </div>
+
+                <div id="bench-section" class="bench" style="display:none;">
+                    <h3 data-i18n="bench">Auswechselbank</h3>
+                    <div id="bench-content"></div>
+                </div>
             </div>
         </div>
 
         <!-- History -->
         <div id="history-section" class="history" style="display:none;">
-            <h3>Letzte Generierungen</h3>
+            <h3 data-i18n="recentGenerations">Letzte Generierungen</h3>
             <div id="history-content"></div>
         </div>
     </div>
 
     <div id="toast" class="toast"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js').catch(() => {});
+            });
+        }
+    </script>
 </body>
 </html>
