@@ -1,11 +1,14 @@
 import { STORAGE_KEYS } from '../constants';
 import { getDefaultStorage } from './storage';
 
-export const DEFAULT_POOL: readonly string[] = [
+const sortNames = (xs: readonly string[]): string[] =>
+  [...xs].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+export const DEFAULT_POOL: readonly string[] = sortNames([
   'Quang', 'Anh', 'Erik', 'Tom', 'Ben', 'Claudio', 'David', 'Elena',
   'Ermin', 'Georg', 'Heiko', 'Janika', 'Jonas', 'Jun-Min', 'Karim',
   'Lara', 'Laura', 'Lisa', 'Omid', 'Pablo', 'Pau', 'Justus', 'Tim',
-];
+]);
 
 export class PoolStore {
   private inner = $state<string[]>([...DEFAULT_POOL]);
@@ -27,7 +30,7 @@ export class PoolStore {
         .filter((x): x is string => typeof x === 'string')
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
-      const deduped = [...new Set(cleaned)];
+      const deduped = sortNames([...new Set(cleaned)]);
       this.inner.length = 0;
       this.inner.push(...deduped);
     } catch {
@@ -61,6 +64,7 @@ export class PoolStore {
     if (!trimmed) return false;
     if (this.inner.includes(trimmed)) return false;
     this.inner.push(trimmed);
+    this.inner.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     this.persist();
     return true;
   }
@@ -84,7 +88,7 @@ export class PoolStore {
       .filter((x): x is string => typeof x === 'string')
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
-    const deduped = [...new Set(cleaned)];
+    const deduped = sortNames([...new Set(cleaned)]);
     this.inner.length = 0;
     this.inner.push(...deduped);
     this.persist();
