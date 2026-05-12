@@ -1,0 +1,40 @@
+@import './lib/styles/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+}
+
+body {
+  background: var(--bg-1);
+  color: var(--text-1);
+  min-height: 100vh;
+  padding: 16px;
+  line-height: 1.5;
+  font-feature-settings: 'kern', 'liga', 'calt', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.2s, color 0.2s;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+#app {
+  max-width: 440px;
+  margin: 0 auto;
+}
