@@ -1,16 +1,18 @@
 -- Laeufer Randomizer — Supabase schema
 -- Run this in the Supabase SQL Editor after creating a new project.
--- Re-runnable: drops + recreates everything cleanly.
+-- Re-runnable: drops + recreates everything cleanly via CASCADE.
 
 -- =====================
 -- DROP (clean re-runs)
 -- =====================
-drop trigger if exists rosters_updated_at on public.rosters;
-drop trigger if exists settings_updated_at on public.settings;
-drop function if exists public.set_updated_at();
-drop table if exists public.rosters;
-drop table if exists public.settings;
-drop table if exists public.profiles;
+-- CASCADE on the tables also drops dependent triggers, policies, indexes,
+-- and removes them from any publications. Order between these three is
+-- irrelevant because none reference each other (they all reference
+-- auth.users directly).
+drop table if exists public.rosters cascade;
+drop table if exists public.settings cascade;
+drop table if exists public.profiles cascade;
+drop function if exists public.set_updated_at() cascade;
 
 -- =====================
 -- TABLES
@@ -120,7 +122,23 @@ create policy "users delete own rosters"
 -- =====================
 -- Realtime publication (for live sync across devices)
 -- =====================
--- These commands enable broadcasting INSERT/UPDATE/DELETE events to subscribed clients.
--- Supabase enables this by default for new projects, but be explicit.
-alter publication supabase_realtime add table public.settings;
-alter publication supabase_realtime add table public.rosters;
+-- Add tables to the Supabase Realtime publication so INSERT/UPDATE/DELETE
+-- events broadcast to subscribed clients. Wrapped in DO blocks because
+-- "alter publication add table" errors if the table is already a member
+-- (Supabase free tier sometimes has the publication as "for all tables in
+-- schema public", in which case our table is added implicitly).
+do $$
+begin
+  alter publication supabase_realtime add table public.settings;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.rosters;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end $$;
