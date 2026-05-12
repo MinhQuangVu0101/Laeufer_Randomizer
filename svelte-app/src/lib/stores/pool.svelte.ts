@@ -4,7 +4,7 @@ import { getDefaultStorage } from './storage';
 export const DEFAULT_POOL: readonly string[] = [
   'Quang', 'Anh', 'Erik', 'Tom', 'Ben', 'Claudio', 'David', 'Elena',
   'Ermin', 'Georg', 'Heiko', 'Janika', 'Jonas', 'Jun-Min', 'Karim',
-  'Lara', 'Laura', 'Lisa', 'Omid', 'Pablo', 'PauTom', 'Justus', 'Tim',
+  'Lara', 'Laura', 'Lisa', 'Omid', 'Pablo', 'Pau', 'Justus', 'Tim',
 ];
 
 export class PoolStore {

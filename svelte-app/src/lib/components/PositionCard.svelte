@@ -58,7 +58,9 @@
   <div class="position-header">
     <span class="badge">{POSITION_META[posId].badge}</span>
     <span class="position-name">{t(POSITION_NAME_KEYS[posId])}</span>
-    <span class="position-max">{t('positionMaxLabel')} {POSITION_META[posId].max}</span>
+    <span class="position-max" title="Max pro Team · Doppelt total · Rest auf Bench">
+      {t('positionMaxLabel')} {POSITION_META[posId].max} {t('positionPerTeam')} · {POSITION_META[posId].max * 2} {t('positionTotalLabel')}
+    </span>
   </div>
   <div
     class="drop-zone"

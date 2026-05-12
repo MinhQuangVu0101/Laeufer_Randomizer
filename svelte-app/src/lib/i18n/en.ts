@@ -21,6 +21,9 @@ export const en: TranslationDict = {
   modeSimple: 'Without positions',
 
   positionMaxLabel: 'max',
+  positionPerTeam: '/ team',
+  positionTotalLabel: 'total',
+  regenerate: '↻ Again',
   positionQuickAdd: '+ Name (Enter)',
   positionRemoveTitle: 'Remove',
 
