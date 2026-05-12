@@ -152,4 +152,102 @@ describe('generateTeams (positions mode)', () => {
       expect(all).not.toContain('Ghost');
     }
   });
+
+  it('falls back to best-effort when strict constraints cannot be satisfied', () => {
+    const r = generateTeams({
+      mode: 'positions',
+      players: [
+        p('A1', 'aussen'),
+        p('A2', 'aussen'),
+        p('A3', 'aussen'),
+        p('A4', 'aussen'),
+        p('A5', 'aussen'),
+        p('A6', 'aussen'),
+      ],
+      team1NoLibero: false,
+      team2NoLibero: false,
+      teamSize: 3,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok && r.mode === 'positions') {
+      const t1Total = teamNames(r.team1).length;
+      const t2Total = teamNames(r.team2).length;
+      expect(t1Total).toBeGreaterThan(0);
+      expect(t2Total).toBeGreaterThan(0);
+      expect(t1Total + t2Total).toBe(6);
+    }
+  });
+
+  it('fills Läufersystem quotas first (2 AA / 2 MB / 1 ZS / 1 LI / 1 DI per team)', () => {
+    const r = generateTeams({
+      mode: 'positions',
+      players: [
+        p('A1', 'aussen'),
+        p('A2', 'aussen'),
+        p('A3', 'aussen'),
+        p('A4', 'aussen'),
+        p('M1', 'mitte'),
+        p('M2', 'mitte'),
+        p('M3', 'mitte'),
+        p('M4', 'mitte'),
+        p('Z1', 'zuspieler'),
+        p('Z2', 'zuspieler'),
+        p('L1', 'libero'),
+        p('L2', 'libero'),
+        p('D1', 'diagonal'),
+        p('D2', 'diagonal'),
+      ],
+      team1NoLibero: false,
+      team2NoLibero: false,
+      teamSize: 7,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok && r.mode === 'positions') {
+      expect(r.team1.aussen).toHaveLength(2);
+      expect(r.team1.mitte).toHaveLength(2);
+      expect(r.team1.zuspieler).toHaveLength(1);
+      expect(r.team1.libero).toHaveLength(1);
+      expect(r.team1.diagonal).toHaveLength(1);
+      expect(r.team2.aussen).toHaveLength(2);
+      expect(r.team2.mitte).toHaveLength(2);
+      expect(r.team2.zuspieler).toHaveLength(1);
+      expect(r.team2.libero).toHaveLength(1);
+      expect(r.team2.diagonal).toHaveLength(1);
+      expect(r.bench).toHaveLength(0);
+    }
+  });
+
+  it('overflows leftover players into least-loaded position when teamSize > quota', () => {
+    const r = generateTeams({
+      mode: 'positions',
+      players: [
+        p('A1', 'aussen'),
+        p('A2', 'aussen'),
+        p('A3', 'aussen'),
+        p('A4', 'aussen'),
+        p('A5', 'aussen'),
+        p('A6', 'aussen'),
+        p('M1', 'mitte'),
+        p('M2', 'mitte'),
+        p('Z1', 'zuspieler'),
+        p('Z2', 'zuspieler'),
+        p('L1', 'libero'),
+        p('L2', 'libero'),
+        p('D1', 'diagonal'),
+        p('D2', 'diagonal'),
+      ],
+      team1NoLibero: false,
+      team2NoLibero: false,
+      teamSize: 7,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok && r.mode === 'positions') {
+      expect(teamNames(r.team1).length).toBe(7);
+      expect(teamNames(r.team2).length).toBe(7);
+      expect(r.bench).toHaveLength(0);
+      // 2 extra aussen players land on aussen (overflow), so one team has 3 aussen
+      const totalAussen = r.team1.aussen.length + r.team2.aussen.length;
+      expect(totalAussen).toBe(6);
+    }
+  });
 });

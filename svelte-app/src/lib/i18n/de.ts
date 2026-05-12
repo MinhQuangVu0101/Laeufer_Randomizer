@@ -19,6 +19,9 @@ const _de = {
   modeSimple: 'Ohne Positionen',
 
   positionMaxLabel: 'max',
+  positionPerTeam: '/ Team',
+  positionTotalLabel: 'total',
+  regenerate: '↻ Nochmal',
   positionQuickAdd: '+ Name (Enter)',
   positionRemoveTitle: 'Entfernen',
 

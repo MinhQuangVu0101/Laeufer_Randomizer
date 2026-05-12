@@ -6,8 +6,8 @@
   import type { GenerationResult, Team } from '../domain/types';
   import TeamCard from './TeamCard.svelte';
 
-  type Props = { result: GenerationResult };
-  const { result }: Props = $props();
+  type Props = { result: GenerationResult; onRegenerate?: () => void };
+  const { result, onRegenerate }: Props = $props();
 
   let captureEl: HTMLElement | undefined = $state();
   let exporting = $state(false);
@@ -138,6 +138,11 @@
     <div class="results-head">
       <h2>{t('generatedTeams')}</h2>
       <div class="result-actions">
+        {#if onRegenerate}
+          <button class="action-btn primary" onclick={onRegenerate} disabled={exporting}>
+            {t('regenerate')}
+          </button>
+        {/if}
         <button class="action-btn" onclick={handleCopy} disabled={exporting}>
           {t('copyTeams')}
         </button>
@@ -233,6 +238,15 @@
   .action-btn:disabled {
     opacity: 0.5;
     cursor: wait;
+  }
+  .action-btn.primary {
+    background: var(--accent);
+    color: var(--text-inverse);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .action-btn.primary:hover:not(:disabled) {
+    background: var(--accent-hover);
   }
 
   .capture {

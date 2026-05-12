@@ -183,7 +183,7 @@
 
 {#if genResult}
   <div bind:this={resultsEl}>
-    <Results result={genResult} />
+    <Results result={genResult} onRegenerate={handleGenerate} />
   </div>
 {/if}
 

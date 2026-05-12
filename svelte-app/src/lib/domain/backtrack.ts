@@ -16,18 +16,22 @@ function emptyTeam(): Team {
   };
 }
 
-export function assignToPositions(
-  players: readonly PlayerWithPositions[],
-  noLibero: boolean,
-): AssignResult {
-  const team = emptyTeam();
-  const limits = {
+function limitsFor(noLibero: boolean): Record<Position, number> {
+  return {
     aussen: POSITION_META.aussen.max,
     mitte: POSITION_META.mitte.max,
     zuspieler: POSITION_META.zuspieler.max,
     libero: noLibero ? 0 : POSITION_META.libero.max,
     diagonal: POSITION_META.diagonal.max,
-  } satisfies Record<Position, number>;
+  };
+}
+
+export function assignToPositions(
+  players: readonly PlayerWithPositions[],
+  noLibero: boolean,
+): AssignResult {
+  const team = emptyTeam();
+  const limits = limitsFor(noLibero);
 
   const sorted = [...players].sort((a, b) => a.positions.length - b.positions.length);
 
@@ -48,4 +52,53 @@ export function assignToPositions(
 
   const success = backtrack(0);
   return { team, skipped: success ? [] : sorted };
+}
+
+/**
+ * Best-effort placement: tries strict limits first, then overflows the
+ * least-loaded preferred position. Only skips when a player has no valid
+ * preferred position at all (e.g. pure libero in a noLibero team).
+ */
+export function assignBestEffort(
+  players: readonly PlayerWithPositions[],
+  noLibero: boolean,
+): AssignResult {
+  const team = emptyTeam();
+  const limits = limitsFor(noLibero);
+  const sorted = [...players].sort((a, b) => a.positions.length - b.positions.length);
+  const skipped: PlayerWithPositions[] = [];
+
+  for (const p of sorted) {
+    const validPositions = p.positions.filter(
+      (pos) => POSITION_IDS.includes(pos) && !(noLibero && pos === 'libero'),
+    );
+    if (validPositions.length === 0) {
+      skipped.push(p);
+      continue;
+    }
+
+    let target: Position | null = null;
+    for (const pos of validPositions) {
+      if (team[pos].length < limits[pos]) {
+        target = pos;
+        break;
+      }
+    }
+    if (target === null) {
+      let bestCount = Infinity;
+      for (const pos of validPositions) {
+        if (team[pos].length < bestCount) {
+          bestCount = team[pos].length;
+          target = pos;
+        }
+      }
+    }
+    if (target) {
+      team[target].push({ name: p.name, position: target, preferences: p.positions });
+    } else {
+      skipped.push(p);
+    }
+  }
+
+  return { team, skipped };
 }

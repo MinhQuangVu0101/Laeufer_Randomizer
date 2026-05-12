@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignToPositions } from './backtrack';
+import { assignBestEffort, assignToPositions } from './backtrack';
 import type { PlayerWithPositions } from './types';
 
 const p = (name: string, ...positions: PlayerWithPositions['positions']): PlayerWithPositions => ({
@@ -92,5 +92,56 @@ describe('assignToPositions', () => {
     const bad = { name: 'X', positions: ['goalkeeper' as never] };
     const result = assignToPositions([bad], false);
     expect(result.skipped.map((x) => x.name)).toEqual(['X']);
+  });
+});
+
+describe('assignBestEffort', () => {
+  it('places everyone when strict assignment works', () => {
+    const result = assignBestEffort(
+      [p('A', 'aussen'), p('B', 'mitte'), p('C', 'zuspieler')],
+      false,
+    );
+    expect(result.skipped).toHaveLength(0);
+    expect(result.team.aussen.map((x) => x.name)).toEqual(['A']);
+    expect(result.team.mitte.map((x) => x.name)).toEqual(['B']);
+    expect(result.team.zuspieler.map((x) => x.name)).toEqual(['C']);
+  });
+
+  it('overflows position max instead of skipping when no alternative', () => {
+    const result = assignBestEffort([p('A', 'aussen'), p('B', 'aussen'), p('C', 'aussen')], false);
+    expect(result.skipped).toHaveLength(0);
+    expect(result.team.aussen.map((x) => x.name).sort()).toEqual(['A', 'B', 'C']);
+  });
+
+  it('overflows liberos when only-libero players exceed max', () => {
+    const result = assignBestEffort([p('L1', 'libero'), p('L2', 'libero')], false);
+    expect(result.skipped).toHaveLength(0);
+    expect(result.team.libero.map((x) => x.name).sort()).toEqual(['L1', 'L2']);
+  });
+
+  it('still skips pure libero when noLibero=true', () => {
+    const result = assignBestEffort([p('L', 'libero')], true);
+    expect(result.skipped.map((x) => x.name)).toEqual(['L']);
+    expect(result.team.libero).toHaveLength(0);
+  });
+
+  it('routes flex player to less-loaded position', () => {
+    const result = assignBestEffort(
+      [p('A', 'aussen'), p('B', 'aussen'), p('C', 'aussen', 'mitte')],
+      false,
+    );
+    expect(result.skipped).toHaveLength(0);
+    expect(result.team.aussen).toHaveLength(2);
+    expect(result.team.mitte.map((x) => x.name)).toEqual(['C']);
+  });
+
+  it('skips player with no valid positions', () => {
+    const result = assignBestEffort([p('Ghost')], false);
+    expect(result.skipped.map((x) => x.name)).toEqual(['Ghost']);
+  });
+
+  it('preserves preferences in placed players', () => {
+    const result = assignBestEffort([p('A', 'aussen', 'mitte')], false);
+    expect(result.team.aussen[0].preferences).toEqual(['aussen', 'mitte']);
   });
 });
