@@ -78,6 +78,17 @@ export class PoolStore {
     this.inner.push(...DEFAULT_POOL);
     this.persist();
   }
+
+  replaceAll(names: readonly string[]) {
+    const cleaned = names
+      .filter((x): x is string => typeof x === 'string')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const deduped = [...new Set(cleaned)];
+    this.inner.length = 0;
+    this.inner.push(...deduped);
+    this.persist();
+  }
 }
 
 export const pool = new PoolStore();

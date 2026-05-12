@@ -1,11 +1,23 @@
 <script lang="ts">
   import { POSITION_IDS } from './lib/constants';
   import { settings } from './lib/stores/settings.svelte';
+  import { pool } from './lib/stores/pool.svelte';
   import { assignments } from './lib/stores/assignments.svelte';
+  import { rosters } from './lib/stores/roster.svelte';
   import { history } from './lib/stores/history.svelte';
   import { toast } from './lib/stores/toast.svelte';
+  import { auth } from './lib/stores/auth.svelte';
   import { generateTeams } from './lib/domain/algorithm';
   import { t } from './lib/i18n';
+  import {
+    pullRemoteSnapshot,
+    pushLocalToRemote,
+    applyRemoteToLocal,
+    mergeRemoteWithLocal,
+    summarizeLocal,
+    type RemoteSnapshot,
+    type SyncDecision,
+  } from './lib/db/sync';
   import type {
     GenerationInput,
     GenerationResult,
@@ -25,9 +37,60 @@
   import Results from './lib/components/Results.svelte';
   import HistorySection from './lib/components/HistorySection.svelte';
   import Toast from './lib/components/Toast.svelte';
+  import AuthBar from './lib/components/AuthBar.svelte';
+  import SyncWizard from './lib/components/SyncWizard.svelte';
 
   let genResult = $state<GenerationResult | null>(null);
   let resultsEl: HTMLElement | undefined = $state();
+  let pendingRemoteSnapshot = $state<RemoteSnapshot | null>(null);
+
+  let lastUserId = $state<string | null>(null);
+
+  $effect(() => {
+    if (!auth) return;
+    const u = auth.user;
+    if (!u) {
+      lastUserId = null;
+      pendingRemoteSnapshot = null;
+      return;
+    }
+    if (u.id === lastUserId) return;
+    lastUserId = u.id;
+    pullRemoteSnapshot(u.id)
+      .then((snapshot) => {
+        pendingRemoteSnapshot = snapshot;
+      })
+      .catch((err) => {
+        console.warn('[sync] pull failed', err);
+        toast.show(t('syncFailed'));
+      });
+  });
+
+  async function handleSyncDecision(decision: SyncDecision) {
+    if (!auth?.user || !pendingRemoteSnapshot) {
+      pendingRemoteSnapshot = null;
+      return;
+    }
+    const userId = auth.user.id;
+    const snapshot = pendingRemoteSnapshot;
+    pendingRemoteSnapshot = null;
+    try {
+      if (decision === 'pull') {
+        applyRemoteToLocal(snapshot, settings, pool, assignments, rosters);
+        toast.show(t('syncToastPulled'));
+      } else if (decision === 'push') {
+        await pushLocalToRemote(userId, settings, pool, assignments, rosters);
+        toast.show(t('syncToastPushed'));
+      } else if (decision === 'merge') {
+        mergeRemoteWithLocal(snapshot, settings, pool, assignments, rosters);
+        await pushLocalToRemote(userId, settings, pool, assignments, rosters);
+        toast.show(t('syncToastMerged'));
+      }
+    } catch (err) {
+      console.warn('[sync] decision failed', err);
+      toast.show(t('syncFailed'));
+    }
+  }
 
   $effect(() => {
     document.documentElement.classList.toggle('theme-dark', settings.theme === 'dark');
@@ -84,6 +147,7 @@
 </script>
 
 <AppHeader />
+<AuthBar />
 <RosterBar />
 <PoolSection />
 <ModeToggle />
@@ -125,6 +189,15 @@
 
 <HistorySection />
 <AppFooter />
+
+{#if pendingRemoteSnapshot}
+  <SyncWizard
+    remote={pendingRemoteSnapshot}
+    local={summarizeLocal(settings, rosters)}
+    onDecide={handleSyncDecision}
+  />
+{/if}
+
 <Toast />
 
 <style>

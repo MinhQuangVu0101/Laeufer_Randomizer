@@ -1,4 +1,4 @@
-export const de = {
+const _de = {
   appTitle: 'Volleyball Generator',
   subtitle: 'Faire Teams per Knopfdruck',
 
@@ -74,7 +74,45 @@ export const de = {
   historyAgo: 'gerade eben',
   historyMinutesAgo: 'vor {n} min',
   historyHoursAgo: 'vor {n} h',
+
+  authActivate: '☁ Sync aktivieren',
+  authSignedIn: 'Sync',
+  authSignOut: 'Abmelden',
+  authEmailTitle: 'Email-Login',
+  authEmailHint: 'Wir senden dir einen 6-stelligen Code per Email.',
+  authEmailLabel: 'Email',
+  authEmailPlaceholder: 'deine@email.de',
+  authSendOtp: 'Code senden',
+  authCancel: 'Abbrechen',
+  authOtpTitle: 'Code eingeben',
+  authOtpHint: '6-stelliger Code aus der Email an {email}',
+  authOtpLabel: 'Code',
+  authOtpPlaceholder: '123456',
+  authVerify: 'Bestätigen',
+  authChangeEmail: 'Andere Email',
+  authToastSignedIn: 'Eingeloggt',
+  authToastSignedOut: 'Abgemeldet',
+  authToastOtpSent: 'Code per Email gesendet',
+  authError: 'Login fehlgeschlagen',
+  authErrorRateLimit: 'Zu viele Versuche — bitte warte einen Moment.',
+
+  syncWizardTitle: 'Erstes Sync',
+  syncWizardDescr: 'Wir haben deinen Cloud-Stand geladen. Was soll passieren?',
+  syncWizardLocalSummary: 'Lokal: {n} Roster',
+  syncWizardRemoteSummary: 'Cloud: {n} Roster',
+  syncPullLabel: 'Cloud → Hier',
+  syncPullDescr: 'Lokale Daten werden ersetzt',
+  syncPushLabel: 'Hier → Cloud',
+  syncPushDescr: 'Cloud wird mit lokalen Daten überschrieben',
+  syncMergeLabel: 'Per Roster mergen',
+  syncMergeDescr: 'Pro Roster gewinnt das mit dem neueren Timestamp',
+  syncLaterLabel: 'Später entscheiden',
+  syncToastPulled: 'Cloud-Daten übernommen',
+  syncToastPushed: 'Lokale Daten hochgeladen',
+  syncToastMerged: 'Daten zusammengeführt',
+  syncFailed: 'Sync fehlgeschlagen',
 };
 
-export type TranslationKey = keyof typeof de;
+export const de = _de;
+export type TranslationKey = keyof typeof _de;
 export type TranslationDict = Record<TranslationKey, string>;

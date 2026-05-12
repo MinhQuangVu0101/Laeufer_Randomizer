@@ -148,6 +148,11 @@ export class RosterStore {
     for (const name of Object.keys(this.inner)) delete this.inner[name];
     this.persist();
   }
+
+  injectRoster(roster: Roster) {
+    this.inner[roster.name] = { ...roster };
+    this.persist();
+  }
 }
 
 export const rosters = new RosterStore();
