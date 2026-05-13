@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
-  base: '/Laeufer_Randomizer/',
+  base: '/',
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
@@ -12,15 +12,15 @@ export default defineConfig({
     svelte(),
     VitePWA({
       registerType: 'autoUpdate',
-      scope: '/Laeufer_Randomizer/',
-      base: '/Laeufer_Randomizer/',
+      scope: '/',
+      base: '/',
       includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Volleyball Team Generator',
         short_name: 'Laeufer',
         description: 'Faire Volleyball-Teams per Knopfdruck',
-        start_url: '/Laeufer_Randomizer/',
-        scope: '/Laeufer_Randomizer/',
+        start_url: '/',
+        scope: '/',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#1c1917',
@@ -30,7 +30,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
-        navigateFallback: '/Laeufer_Randomizer/index.html',
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
