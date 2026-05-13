@@ -116,6 +116,25 @@ function generatePositions(
   const leftover = shuffle(sorted.filter((p) => !locked.has(p.name)), random);
   const bench: BenchPlayerWithPositions[] = [];
 
+  // Try to place player `p` on `team`. Returns true on success, false if
+  // the player has no valid position for this team (e.g., only knows libero
+  // and the team has libero disabled).
+  const tryPlace = (team: Team, noLibero: boolean, p: PlayerWithPositions): boolean => {
+    const valid = shuffle(
+      p.positions.filter(
+        (pos) => POSITION_IDS.includes(pos) && !(noLibero && pos === 'libero'),
+      ),
+      random,
+    );
+    if (valid.length === 0) return false;
+    let bestPos = valid[0];
+    for (const pos of valid) {
+      if (team[pos].length < team[bestPos].length) bestPos = pos;
+    }
+    team[bestPos].push({ name: p.name, position: bestPos, preferences: p.positions });
+    return true;
+  };
+
   for (const p of leftover) {
     const t1Count = teamCount(team1);
     const t2Count = teamCount(team2);
@@ -134,25 +153,21 @@ function generatePositions(
       targetIs1 = t1Count < t2Count;
     }
 
-    const target = targetIs1 ? team1 : team2;
-    const targetNoLibero = targetIs1 ? input.team1NoLibero : input.team2NoLibero;
+    const firstTeam = targetIs1 ? team1 : team2;
+    const firstNoLibero = targetIs1 ? input.team1NoLibero : input.team2NoLibero;
+    if (tryPlace(firstTeam, firstNoLibero, p)) continue;
 
-    const validPositions = shuffle(
-      p.positions.filter(
-        (pos) => POSITION_IDS.includes(pos) && !(targetNoLibero && pos === 'libero'),
-      ),
-      random,
-    );
-    if (validPositions.length === 0) {
-      bench.push({ name: p.name, preferences: p.positions });
-      continue;
+    // First team rejected (no valid position for this player). Fall back to
+    // the other team if it has capacity — otherwise bench. This catches the
+    // case where the tie coin-flip sent a libero-only player to the team
+    // that has libero disabled.
+    const secondCount = targetIs1 ? t2Count : t1Count;
+    if (secondCount < teamSize) {
+      const secondTeam = targetIs1 ? team2 : team1;
+      const secondNoLibero = targetIs1 ? input.team2NoLibero : input.team1NoLibero;
+      if (tryPlace(secondTeam, secondNoLibero, p)) continue;
     }
-
-    let bestPos = validPositions[0];
-    for (const pos of validPositions) {
-      if (target[pos].length < target[bestPos].length) bestPos = pos;
-    }
-    target[bestPos].push({ name: p.name, position: bestPos, preferences: p.positions });
+    bench.push({ name: p.name, preferences: p.positions });
   }
 
   return { ok: true, mode: 'positions', team1, team2, bench };
