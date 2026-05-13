@@ -250,4 +250,100 @@ describe('generateTeams (positions mode)', () => {
       expect(totalAussen).toBe(6);
     }
   });
+
+  it('Phase 2 overflow is non-deterministic across runs with the same input', () => {
+    // Fixture forces Phase 2 to run: 14 strict-quota players fill both teams
+    // in Phase 1 (2 AA + 2 MB + 1 ZS + 1 LI + 1 DI = 7 per team), and the
+    // 2 FLEX players are real leftover that Phase 2 has to distribute.
+    // teamSize=8 means each team has exactly one overflow slot.
+    const input = {
+      mode: 'positions' as const,
+      players: [
+        p('A1', 'aussen'),
+        p('A2', 'aussen'),
+        p('A3', 'aussen'),
+        p('A4', 'aussen'),
+        p('M1', 'mitte'),
+        p('M2', 'mitte'),
+        p('M3', 'mitte'),
+        p('M4', 'mitte'),
+        p('Z1', 'zuspieler'),
+        p('Z2', 'zuspieler'),
+        p('L1', 'libero'),
+        p('L2', 'libero'),
+        p('D1', 'diagonal'),
+        p('D2', 'diagonal'),
+        p('FLEX1', 'aussen', 'mitte'),
+        p('FLEX2', 'aussen', 'mitte'),
+      ],
+      team1NoLibero: false,
+      team2NoLibero: false,
+      teamSize: 8,
+    };
+    // Locate where each overflow player landed (team + position) per run.
+    const flexLocations = new Set<string>();
+    let phase2Ran = 0;
+    for (let i = 0; i < 100; i++) {
+      const r = generateTeams(input);
+      if (!r.ok || r.mode !== 'positions') continue;
+      // Phase 2 actually distributed if both teams have 8 players.
+      if (teamNames(r.team1).length === 8 && teamNames(r.team2).length === 8) phase2Ran++;
+      for (const teamLabel of ['t1', 't2'] as const) {
+        const team = teamLabel === 't1' ? r.team1 : r.team2;
+        for (const pos of ['aussen', 'mitte'] as const) {
+          for (const x of team[pos]) {
+            if (x.name === 'FLEX1' || x.name === 'FLEX2') {
+              flexLocations.add(`${x.name}:${teamLabel}:${pos}`);
+            }
+          }
+        }
+      }
+    }
+    expect(phase2Ran).toBe(100);
+    // Without the Phase 2 randomness fix, both FLEX players always landed in
+    // the same (team, position). With shuffled leftover + coin-flip on tie +
+    // shuffled validPositions, both team and position can vary.
+    expect(flexLocations.size).toBeGreaterThanOrEqual(3);
+  });
+
+  it('falls back to other team when tie coin-flip lands on a libero-disabled team', () => {
+    // Only team1 allows libero. A pure-libero leftover player on a tied
+    // overflow step could be sent to team2 by the new coin-flip — and team2
+    // has no libero slot for them. The fallback must retry team1 instead of
+    // benching the player.
+    const input = {
+      mode: 'positions' as const,
+      players: [
+        // Phase 1 strict fillers — 6 each per team (no libero).
+        p('A1', 'aussen'),
+        p('A2', 'aussen'),
+        p('A3', 'aussen'),
+        p('A4', 'aussen'),
+        p('M1', 'mitte'),
+        p('M2', 'mitte'),
+        p('M3', 'mitte'),
+        p('M4', 'mitte'),
+        p('Z1', 'zuspieler'),
+        p('Z2', 'zuspieler'),
+        p('D1', 'diagonal'),
+        p('D2', 'diagonal'),
+        // Phase 2 leftover: pure-libero player. Only team1 can take them.
+        p('PURELIB', 'libero'),
+      ],
+      team1NoLibero: false,
+      team2NoLibero: true,
+      teamSize: 7,
+    };
+    // Run 50 times — without the fallback, ~50% should land on bench.
+    let placedInTeam1Libero = 0;
+    let benched = 0;
+    for (let i = 0; i < 50; i++) {
+      const r = generateTeams(input);
+      if (!r.ok || r.mode !== 'positions') continue;
+      if (r.team1.libero.some((x) => x.name === 'PURELIB')) placedInTeam1Libero++;
+      if (r.bench.some((x) => x.name === 'PURELIB')) benched++;
+    }
+    expect(placedInTeam1Libero).toBe(50);
+    expect(benched).toBe(0);
+  });
 });

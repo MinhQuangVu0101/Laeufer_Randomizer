@@ -33,8 +33,8 @@ export const en: TranslationDict = {
   posLibero: 'Libero',
   posDiagonal: 'Opposite',
 
-  team1NoLibero: 'Team 1 without libero',
-  team2NoLibero: 'Team 2 without libero',
+  team1WithLibero: 'Team 1 with libero',
+  team2WithLibero: 'Team 2 with libero',
 
   perTeam: 'Per team',
   restToBench: 'Rest → bench',
@@ -55,8 +55,8 @@ export const en: TranslationDict = {
   errorNoPlayersBody: 'Please assign at least one player to a team before generating.',
   errorOnlyLibero: 'Libero conflict.',
   errorOnlyLiberoBody:
-    'These players can only play libero, but both teams have "no libero" enabled',
-  errorOnlyLiberoFix: 'Disable the option for at least one team.',
+    'These players can only play libero, but no team has "with libero" enabled',
+  errorOnlyLiberoFix: 'Enable the libero option for at least one team.',
   errorNoSolution: 'No valid split found.',
   errorNoSolutionBody:
     'Try different player combinations or change the libero options. You may have too many players in a single position.',

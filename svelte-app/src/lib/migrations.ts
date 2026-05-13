@@ -105,8 +105,10 @@ export function migrate(storage: Storage = localStorage): MigrationReport {
     const settings = {
       mode: 'positions' as const,
       teamSize: oldTeamSize !== null ? clampTeamSize(Number(oldTeamSize)) : DEFAULT_TEAM_SIZE,
-      team1NoLibero: oldT1NoLib === 'true',
-      team2NoLibero: oldT2NoLib === 'true',
+      // Missing v1 key → use the new default (libero off). v1 explicit
+      // values are still honored.
+      team1NoLibero: oldT1NoLib === null ? true : oldT1NoLib === 'true',
+      team2NoLibero: oldT2NoLib === null ? true : oldT2NoLib === 'true',
     };
     storage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
     migratedKeys.push(STORAGE_KEYS.settings);
