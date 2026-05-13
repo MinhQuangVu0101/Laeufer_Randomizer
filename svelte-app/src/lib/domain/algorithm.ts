@@ -110,7 +110,10 @@ function generatePositions(
   // Phase 2: Distribute leftover players into overflow positions or bench.
   // Pick the team with fewer players to keep teams balanced; pick the least-loaded
   // valid position within that team so we don't pile everyone onto one spot.
-  const leftover = sorted.filter((p) => !locked.has(p.name));
+  // Randomize at every tie-break so repeated runs with the same input produce
+  // different overflow assignments (leftover order, team-on-equal-count,
+  // position-on-equal-load).
+  const leftover = shuffle(sorted.filter((p) => !locked.has(p.name)), random);
   const bench: BenchPlayerWithPositions[] = [];
 
   for (const p of leftover) {
@@ -125,15 +128,20 @@ function generatePositions(
       targetIs1 = false;
     } else if (t2Count >= teamSize) {
       targetIs1 = true;
+    } else if (t1Count === t2Count) {
+      targetIs1 = random() < 0.5;
     } else {
-      targetIs1 = t1Count <= t2Count;
+      targetIs1 = t1Count < t2Count;
     }
 
     const target = targetIs1 ? team1 : team2;
     const targetNoLibero = targetIs1 ? input.team1NoLibero : input.team2NoLibero;
 
-    const validPositions = p.positions.filter(
-      (pos) => POSITION_IDS.includes(pos) && !(targetNoLibero && pos === 'libero'),
+    const validPositions = shuffle(
+      p.positions.filter(
+        (pos) => POSITION_IDS.includes(pos) && !(targetNoLibero && pos === 'libero'),
+      ),
+      random,
     );
     if (validPositions.length === 0) {
       bench.push({ name: p.name, preferences: p.positions });

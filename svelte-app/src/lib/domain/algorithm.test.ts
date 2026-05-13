@@ -250,4 +250,49 @@ describe('generateTeams (positions mode)', () => {
       expect(totalAussen).toBe(6);
     }
   });
+
+  it('Phase 2 overflow is non-deterministic across runs with the same input', () => {
+    const input = {
+      mode: 'positions' as const,
+      players: [
+        p('A1', 'aussen'),
+        p('A2', 'aussen'),
+        p('A3', 'aussen'),
+        p('M1', 'mitte'),
+        p('M2', 'mitte'),
+        p('M3', 'mitte'),
+        p('Z1', 'zuspieler'),
+        p('Z2', 'zuspieler'),
+        p('L1', 'libero'),
+        p('L2', 'libero'),
+        p('D1', 'diagonal'),
+        p('D2', 'diagonal'),
+        p('FLEX1', 'aussen', 'mitte'),
+        p('FLEX2', 'aussen', 'mitte'),
+      ],
+      team1NoLibero: false,
+      team2NoLibero: false,
+      teamSize: 7,
+    };
+    // Locate where each overflow player landed (team + position) per run.
+    const flexLocations = new Set<string>();
+    for (let i = 0; i < 100; i++) {
+      const r = generateTeams(input);
+      if (!r.ok || r.mode !== 'positions') continue;
+      for (const teamLabel of ['t1', 't2'] as const) {
+        const team = teamLabel === 't1' ? r.team1 : r.team2;
+        for (const pos of ['aussen', 'mitte'] as const) {
+          for (const x of team[pos]) {
+            if (x.name === 'FLEX1' || x.name === 'FLEX2') {
+              flexLocations.add(`${x.name}:${teamLabel}:${pos}`);
+            }
+          }
+        }
+      }
+    }
+    // Before fix: each flex player always landed on the same team+position
+    // (2 unique locations). After fix: both team and position can vary, so
+    // we expect at least 3 distinct (player, team, position) combinations.
+    expect(flexLocations.size).toBeGreaterThanOrEqual(3);
+  });
 });
