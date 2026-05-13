@@ -31,8 +31,8 @@ const _de = {
   posLibero: 'Libero',
   posDiagonal: 'Diagonal',
 
-  team1NoLibero: 'Team 1 ohne Libero',
-  team2NoLibero: 'Team 2 ohne Libero',
+  team1WithLibero: 'Team 1 mit Libero',
+  team2WithLibero: 'Team 2 mit Libero',
 
   perTeam: 'Pro Team',
   restToBench: 'Rest → Bank',
@@ -53,8 +53,8 @@ const _de = {
   errorNoPlayersBody: 'Bitte mindestens einen Spieler einem Team zuweisen, bevor du generierst.',
   errorOnlyLibero: 'Libero-Konflikt.',
   errorOnlyLiberoBody:
-    'Diese Spieler können nur Libero spielen, aber beide Teams haben „ohne Libero" aktiviert',
-  errorOnlyLiberoFix: 'Deaktiviere die Option für mindestens ein Team.',
+    'Diese Spieler können nur Libero spielen, aber kein Team hat „mit Libero" aktiviert',
+  errorOnlyLiberoFix: 'Aktiviere die Libero-Option für mindestens ein Team.',
   errorNoSolution: 'Keine gültige Aufteilung gefunden.',
   errorNoSolutionBody:
     'Probiere andere Spielerkombinationen oder ändere die Libero-Optionen. Vielleicht hast du zu viele Spieler einer einzelnen Position.',

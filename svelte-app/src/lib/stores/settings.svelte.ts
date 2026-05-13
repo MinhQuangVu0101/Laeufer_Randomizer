@@ -25,8 +25,8 @@ const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
   lang: 'de',
   teamSize: DEFAULT_TEAM_SIZE,
-  team1NoLibero: false,
-  team2NoLibero: false,
+  team1NoLibero: true,
+  team2NoLibero: true,
 };
 
 function clampTeamSize(n: number): number {

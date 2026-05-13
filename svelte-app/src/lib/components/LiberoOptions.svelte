@@ -5,12 +5,20 @@
 
 <div class="libero-options">
   <label>
-    <input type="checkbox" bind:checked={settings.team1NoLibero} />
-    <span>{t('team1NoLibero')}</span>
+    <input
+      type="checkbox"
+      checked={!settings.team1NoLibero}
+      onchange={(e) => (settings.team1NoLibero = !(e.currentTarget as HTMLInputElement).checked)}
+    />
+    <span>{t('team1WithLibero')}</span>
   </label>
   <label>
-    <input type="checkbox" bind:checked={settings.team2NoLibero} />
-    <span>{t('team2NoLibero')}</span>
+    <input
+      type="checkbox"
+      checked={!settings.team2NoLibero}
+      onchange={(e) => (settings.team2NoLibero = !(e.currentTarget as HTMLInputElement).checked)}
+    />
+    <span>{t('team2WithLibero')}</span>
   </label>
 </div>
 
